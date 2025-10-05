@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Site interactif complet</title>
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: white;
+  overflow: hidden;
+}
+#container {
+  position: absolute;
+  width: 1920px;
+  height: 1080px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+.img-item {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  user-select: none;
+}
+#fond {
+  width: 1920px;
+  height: 1080px;
+  object-fit: cover;
+  left: 960px;
+  top: 540px;
+  transform: translate(-50%, -50%);
+  z-index: 0;
+}
+</style>
+</head>
+<body>
+
+<div id="container">
+  <img id="fond" src="images/fond.png" class="img-item">
+</div>
+
+<script>
+const container = document.getElementById('container');
+const params = new URLSearchParams(window.location.search);
+const currentPage = parseInt(params.get("page")) || 1;
+
+const data = [
+  // Éléments fixes
+  { base:"images/homme.png", hover:"images/homme1.png", x:1740.97, y:494.29, hoverX:1740.97, hoverY:494.29, z:1, pages:[1,2,3,4,5,6,7,8,9,10,11,12], goto:10 },
+  { base:"images/livre.png", hover:"images/livre1.png", x:195.59, y:490.3, hoverX:189.90, hoverY:485.14, z:1, pages:[1,2,3,4,5,6,7,8,9,10,11,12], goto:11 },
+  { base:"images/point.png", hover:"images/point1.png", x:862.18, y:957.47, hoverX:862.00, hoverY:961.47, z:3, pages:[1,2,3,4,5,6,7,8,9,10,11,12], goto:12 },
+
+  // Portfolio invisible par défaut
+  { base:"images/portfolio1.png", hover:"images/portfolio.png", x:931.93, y:68.78, hoverX:931.93, hoverY:68.78, z:5, pages:[1,2,3,4,5,6,7,8,9,10,11,12], goto:1 },
+
+  // Labos page 1
+  { base:"images/fungilab.png", hover:"images/fungilab1.png", x:793.91, y:623.73, hoverX:772.84, hoverY:503.73, z:4, pages:[1], goto:5 },
+  { base:"images/lowtechlab.png", hover:"images/lowtechlab1.png", x:899.74, y:567.73, hoverX:879.83, hoverY:444.16, z:3, pages:[1], goto:3 },
+  { base:"images/drid.png", hover:"images/drid1.png", x:1002.68, y:509.33, hoverX:975.98, hoverY:391.79, z:2, pages:[1], goto:2 },
+  { base:"images/milvi.png", hover:"images/milvi1.png", x:1103.57, y:456.33, hoverX:1068.44, hoverY:333.92, z:1, pages:[1], goto:4 },
+
+  // Pages 2–5 : k72-k75 → pages 6-9
+  { base:"images/k72.png", x:1393.46, y:625.42, z:2, pages:[2], goto:6 },
+  { base:"images/k73.png", x:1393.46, y:625.42, z:2, pages:[3], goto:7 },
+  { base:"images/k74.png", x:1393.46, y:625.42, z:2, pages:[4], goto:8 },
+  { base:"images/k75.png", x:1393.46, y:625.42, z:2, pages:[5], goto:9 },
+  
+
+  // Pages finales 6–9 : boîte et nuage avec retour à page précédente
+  { base:"images/boite6.png", x:1396.82, y:714.64, z:2, pages:[6], gotoPrev:2 },
+  { base:"images/nu6.png",    x:1396.82, y:315.10, z:1, pages:[6] },
+  { base:"images/dshema.png",    x:738.7174, y:540.4293, z:1, pages:[6] },
+  { base:"images/tp6.png",    x:1411.2405, y:93.69, z:1, pages:[6] },
+  
+  { base:"images/boite7.png", x:1396.82, y:714.64, z:2, pages:[7], gotoPrev:3 },
+  { base:"images/nu7.png",    x:1396.82, y:315.10, z:1, pages:[7] },
+  { base:"images/bshema.png",    x:709.5206, y:512.922, z:1, pages:[7] },
+  { base:"images/b1.png",    x:1045.9951, y:347.2703, z:1, pages:[7] },
+  { base:"images/b2.png",    x:404.5602, y:790.6317, z:1, pages:[7] },
+  { base:"images/tp7.png",    x:1411.2405, y:93.69, z:1, pages:[7] },
+  
+
+  { base:"images/boite8.png", x:1396.82, y:714.64, z:2, pages:[8], gotoPrev:4 },
+  { base:"images/nu8.png",    x:1396.82, y:315.10, z:1, pages:[8] },
+  { base:"images/tp8.png",    x:1411.2405, y:93.69, z:1, pages:[8] },
+
+  { base:"images/boite9.png", x:1396.82, y:714.64, z:2, pages:[9], gotoPrev:5 },
+  { base:"images/nu9.png",    x:1396.82, y:315.10, z:1, pages:[9] },
+  { base:"images/fshema.png", x:556.0094, y:263.2854, z:2, pages:[9] },
+  { base:"images/flab.png", x:680.2523, y:651.8515, z:2, pages:[9] },
+  { base:"images/tp9.png",    x:1411.2405, y:93.69, z:1, pages:[9] },
+
+  { base:"images/p12titre.png",    x:1411.2405, y:93.69, z:1, pages:[12] },
+
+  
+];
+
+data.forEach(item => {
+  if (!item.pages.includes(currentPage)) return;
+
+  // Portfolio spécial
+  if(item.base === item.hover){
+    const hover = document.createElement('img');
+    hover.src = item.hover;
+    hover.classList.add('img-item');
+    hover.style.left = item.hoverX + 'px';
+    hover.style.top = item.hoverY + 'px';
+    hover.style.zIndex = item.z;
+    hover.style.opacity = 0;
+    container.appendChild(hover);
+
+    hover.addEventListener('mouseover', () => { hover.style.opacity = 1; });
+    hover.addEventListener('mouseout', () => { hover.style.opacity = 0; });
+    hover.addEventListener('click', () => { window.location.search='?page=1'; });
+    return;
+  }
+
+  const base = document.createElement('img');
+  base.src = item.base;
+  base.classList.add('img-item');
+  base.style.left = item.x + 'px';
+  base.style.top = item.y + 'px';
+  base.style.zIndex = item.z;
+  container.appendChild(base);
+
+  let hover = null;
+  if(item.hover){
+    hover = document.createElement('img');
+    hover.src = item.hover;
+    hover.classList.add('img-item');
+    hover.style.left = item.hoverX + 'px';
+    hover.style.top = item.hoverY + 'px';
+    hover.style.zIndex = item.z;
+    hover.style.display = 'none';
+    container.appendChild(hover);
+
+    base.addEventListener('mouseover', () => {
+      base.style.display = 'none';
+      hover.style.display = 'block';
+    });
+    hover.addEventListener('mouseout', () => {
+      hover.style.display = 'none';
+      base.style.display = 'block';
+    });
+  }
+
+  // Navigation au clic
+  if(item.goto){
+    base.addEventListener('click', () => { window.location.search='?page='+item.goto; });
+    if(hover) hover.addEventListener('click', () => { window.location.search='?page='+item.goto; });
+  }
+
+  // Retour à la page précédente pour les boîtes
+  if(item.gotoPrev){
+    base.addEventListener('click', () => { window.location.search='?page='+item.gotoPrev; });
+  }
+});
+// === Images h101 et h102 (page 10) ===
+if (currentPage === 10) {
+  const posX = 982;
+  const posY = 518.61;
+
+  // Image visible au départ
+  const img1 = document.createElement('img');
+  img1.src = "images/h101.png";
+  img1.classList.add('img-item');
+  img1.style.left = posX + 'px';
+  img1.style.top = posY + 'px';
+  img1.style.zIndex = 2;
+  container.appendChild(img1);
+
+  // Image de remplacement (cachée au départ)
+  const img2 = document.createElement('img');
+  img2.src = "images/h102.png";
+  img2.classList.add('img-item');
+  img2.style.left = posX + 'px';
+  img2.style.top = posY + 'px';
+  img2.style.zIndex = 3;
+  img2.style.display = 'none';
+  container.appendChild(img2);
+
+  // Clic → alterne entre les deux
+  img1.addEventListener('click', () => {
+    img1.style.display = 'none';
+    img2.style.display = 'block';
+  });
+
+  img2.addEventListener('click', () => {
+    img2.style.display = 'none';
+    img1.style.display = 'block';
+  });
+}
+
+
+// Redimension adaptatif
+function resizeContainer() {
+  const scale = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+  container.style.transform = `translate(-50%, -50%) scale(${scale})`;
+}
+window.addEventListener('resize', resizeContainer);
+resizeContainer();
+// === Images supplémentaires pour les pages 6 à 13 ===
+const imagesAAjouter = [
+
+
+  // Page 10
+
+
+  // Page 11
+  { base:"images/textetest.png", x:800, y:500, width:220, height:160, z:2, pages:[11] },
+
+  // Page 12
+
+
+  // Page 13
+  { base:"images/photo13_1.png", x:900, y:500, width:250, height:180, z:2, pages:[13] }
+];
+
+// === Génération des images ===
+imagesAAjouter.forEach(item => {
+  if (!item.pages.includes(currentPage)) return;
+
+  const img = document.createElement('img');
+  img.src = item.base;
+  img.classList.add('img-item');
+  img.style.left = item.x + 'px';
+  img.style.top = item.y + 'px';
+  img.style.zIndex = item.z;
+  if (item.width) img.style.width = item.width + 'px';
+  if (item.height) img.style.height = item.height + 'px';
+
+  container.appendChild(img);
+});
+// === Slider pour la page 12 ===
+if(currentPage === 12){
+  const sliderImages = [
+     "images/120.png",
+    "images/121.png",
+    "images/122.png",
+    "images/123.png",
+    "images/124.png",
+    "images/125.png"
+  ];
+  let currentIndex = 0;
+
+  // Image du slider
+  const img = document.createElement('img');
+  img.src = sliderImages[currentIndex];
+  img.classList.add('img-item');
+  img.style.left = '982.42px';
+  img.style.top = '514.69px';
+  img.style.zIndex = 2;
+  container.appendChild(img);
+
+  // Bouton précédent
+  const btnG = document.createElement('img');
+  btnG.src = "images/boutong.png";
+  btnG.classList.add('img-item');
+  btnG.style.left = '684.297px';
+  btnG.style.top = '995.8503px';
+  btnG.style.cursor = 'pointer';
+  btnG.style.zIndex = 5;
+  container.appendChild(btnG);
+
+  // Bouton suivant
+  const btnD = document.createElement('img');
+  btnD.src = "images/boutond.png";
+  btnD.classList.add('img-item');
+  btnD.style.left = '1025.4581px';
+  btnD.style.top = '995.8503px';
+  btnD.style.cursor = 'pointer';
+  btnD.style.zIndex = 5;
+  container.appendChild(btnD);
+
+  // Gestion du clic pour avancer (stop à la dernière image)
+  btnD.addEventListener('click', () => {
+    if(currentIndex < sliderImages.length - 1){
+      currentIndex++;
+      img.src = sliderImages[currentIndex];
+    }
+  });
+
+  // Gestion du clic pour reculer (stop à la première image)
+  btnG.addEventListener('click', () => {
+    if(currentIndex > 0){
+      currentIndex--;
+      img.src = sliderImages[currentIndex];
+    }
+  });
+}
+
+
+</script>
+
+</body>
+</html>
